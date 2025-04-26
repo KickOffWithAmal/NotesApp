@@ -119,6 +119,7 @@ fun NoteScreen(
         if (notes.isEmpty()) {
             Text(
                 text = "No notes yet!",
+
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(16.dp)
             )
