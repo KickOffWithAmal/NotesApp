@@ -1,5 +1,6 @@
 package com.kickoffwithamal.notesapp.screen
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +20,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,24 +32,57 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kickoffwithamal.notesapp.R
 import com.kickoffwithamal.notesapp.components.NoteButton
 import com.kickoffwithamal.notesapp.components.NoteInputText
-import com.kickoffwithamal.notesapp.data.NotesDataSource
 import com.kickoffwithamal.notesapp.model.Note
+import com.kickoffwithamal.notesapp.network.UiState
+import com.kickoffwithamal.notesapp.network.model.WeatherResponse
+import com.kickoffwithamal.notesapp.util.ShimmerFullScreen
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteScreen(
+    viewModel: NoteViewModel,
     notes: List<Note>,
     onAddNote: (Note) -> Unit,
     onRemoveNote: (Note) -> Unit
 ) {
 
+    val state by viewModel.weatherState.collectAsState()
+    LaunchedEffect(Unit) {
+        viewModel.getWeather("London") // weather api
+    }
+
+    when(state) {
+        is UiState.Loading -> {
+            ShimmerFullScreen()
+        }
+        is UiState.Success -> {
+           val data = (state as UiState.Success<WeatherResponse>).data
+            ScreenContent(
+                data = data,
+                notes = notes,
+                onAddNote = {},
+                onRemoveNote = {}
+                )
+        }
+        is UiState.Error -> Log.i("Result", (state as UiState.Error).message)
+    }
+
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScreenContent(
+    data: WeatherResponse,
+    notes: List<Note>,
+    onAddNote: (Note) -> Unit,
+    onRemoveNote: (Note) -> Unit
+) {
     var title by remember {
         mutableStateOf("")
     }
@@ -62,6 +98,7 @@ fun NoteScreen(
             modifier = Modifier.background(color = Color(0xFFAFA12C)),
             title = {
                 Text(text = stringResource(id = R.string.app_name))
+//                Text(text = data.location.name)
             },
             actions = {
                 Icon(imageVector = Icons.Rounded.Notifications, contentDescription = "Icon")
@@ -133,6 +170,7 @@ fun NoteScreen(
             }
         }
     }
+
 }
 
 @Composable
@@ -144,7 +182,7 @@ fun NoteRow(
     Surface(
         modifier
             .padding(4.dp)
-            .clip(RoundedCornerShape(topEnd = 33.dp, bottomStart = 33.dp))
+            .clip(RoundedCornerShape(33.dp))
             .fillMaxWidth(),
         color = Color.Yellow,
         shadowElevation = 6.dp
@@ -166,8 +204,9 @@ fun NoteRow(
     }
 }
 
-@Preview
-@Composable
-fun NotesScreenPreview() {
-    NoteScreen(notes = NotesDataSource().loadNotes(), onAddNote = {}, onRemoveNote = {})
-}
+
+//@Preview
+//@Composable
+//fun NotesScreenPreview() {
+//    NoteScreen(viewModel = null, notes = NotesDataSource().loadNotes(), onAddNote = {}, onRemoveNote = {})
+//}

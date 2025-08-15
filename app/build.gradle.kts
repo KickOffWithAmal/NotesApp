@@ -1,5 +1,3 @@
-import kotlin.jvm.internal.Intrinsics.Kotlin
-
 plugins {
     kotlin("kapt")
     alias(libs.plugins.android.application)
@@ -70,14 +68,23 @@ dependencies {
 // Hilt & Dagger
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+
 // Room
-    implementation (libs.androidx.room.runtime)
+    implementation(libs.androidx.room.runtime)
     kapt(libs.androidx.room.compiler)
-    implementation (libs.androidx.room.ktx)
+    implementation(libs.androidx.room.ktx)
 
 // Coroutines
-    implementation (libs.kotlinx.coroutines.core)
-    implementation (libs.kotlinx.coroutines.android)
-    implementation (libs.kotlinx.coroutines.play.services)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
+
+// Retrofit
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+// Shimmer
+    implementation("com.valentinilk.shimmer:compose-shimmer:1.3.0")
 
 }

@@ -4,20 +4,28 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kickoffwithamal.notesapp.model.Note
+import com.kickoffwithamal.notesapp.network.ApiInterface
+import com.kickoffwithamal.notesapp.network.UiState
+import com.kickoffwithamal.notesapp.network.model.WeatherResponse
 import com.kickoffwithamal.notesapp.repository.NoteRepository
+import com.kickoffwithamal.notesapp.util.Constant
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class NoteViewModel @Inject constructor(private val repository: NoteRepository) : ViewModel() {
+class NoteViewModel @Inject constructor(private val repository: NoteRepository, private val apiInterface: ApiInterface) : ViewModel() {
 
     private val _noteList = MutableStateFlow<List<Note>>(emptyList())
+    private val _weatherState = MutableStateFlow<UiState<WeatherResponse>>(UiState.Loading)
+    val weatherState: StateFlow<UiState<WeatherResponse>> = _weatherState
+
     val noteList = _noteList.asStateFlow()
     // var noteList = mutableStateListOf<Note>()
 
@@ -56,6 +64,23 @@ class NoteViewModel @Inject constructor(private val repository: NoteRepository) 
     private suspend fun refreshNoteList() {
         repository.getAllNotes().collect { updatedNotes ->
             _noteList.value = updatedNotes
+        }
+    }
+
+    fun getWeather(place: String) {
+        viewModelScope.launch {
+            try {
+                val response = apiInterface.getWeather(apiKey = Constant.apiKey, place = place)
+                if(response.isSuccessful) {
+                    _weatherState.value = UiState.Success(response.body()!!)
+                    Log.i("Response", response.body().toString())
+                } else{
+                    _weatherState.value = UiState.Error(response.message())
+                    Log.i("Response", response.errorBody().toString())
+                }
+            } catch (e: Exception) {
+                _weatherState.value = UiState.Error(e.localizedMessage ?: "Unknown error")
+            }
         }
     }
 
